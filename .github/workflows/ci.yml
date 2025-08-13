@@ -16,23 +16,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Use Node from .nvmrc
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-
-      # Cache npm downloads (speeds up npm ci)
       - name: Cache npm
         uses: actions/cache@v4
         with:
           path: ~/.npm
           key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            npm-${{ runner.os }}-
-
-      - name: npm ci
-        run: npm ci
+          restore-keys: npm-${{ runner.os }}-
+      - run: npm ci
 
   typecheck:
     name: Typecheck
@@ -43,45 +36,69 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-
       - name: Cache npm
         uses: actions/cache@v4
         with:
           path: ~/.npm
           key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            npm-${{ runner.os }}-
-
-      # ✅ ensure the react-router CLI from @react-router/dev is installed in THIS job
-      - name: npm ci
-        run: npm ci
-
-      - name: react-router typegen + tsc
-        run: npm run typecheck
+          restore-keys: npm-${{ runner.os }}-
+      - run: npm ci
+      - run: npm run typecheck
 
   build:
     name: Build
     needs: typecheck
     runs-on: ubuntu-latest
+    outputs:
+      out_client: ${{ steps.detect.outputs.out_client }}
+      out_server: ${{ steps.detect.outputs.out_server }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-
       - name: Cache npm
         uses: actions/cache@v4
         with:
           path: ~/.npm
           key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            npm-${{ runner.os }}-
-
-      - name: npm ci
-        run: npm ci
-
-      - name: react-router build
+          restore-keys: npm-${{ runner.os }}-
+      - run: npm ci
+      - name: Build project
         run: npm run build
+
+      # 👇 Detect where the build actually went
+      - name: Detect build output
+        id: detect
+        shell: bash
+        run: |
+          echo "Listing workspace:"
+          ls -la
+          echo "Listing build tree (if any):"
+          [ -d build ] && ls -la build || true
+          [ -d dist ] && ls -la dist || true
+
+          OUT_CLIENT=""
+          OUT_SERVER=""
+
+          if [ -d "build/client" ]; then
+            OUT_CLIENT="build/client"
+          elif [ -d "dist" ]; then
+            OUT_CLIENT="dist"
+          elif [ -d "build" ]; then
+            # fallback: upload whole build dir
+            OUT_CLIENT="build"
+          fi
+
+          if [ -d "build/server" ]; then
+            OUT_SERVER="build/server"
+          fi
+
+          echo "Detected client out: $OUT_CLIENT"
+          echo "Detected server out: $OUT_SERVER"
+
+          echo "out_client=$OUT_CLIENT" >> "$GITHUB_OUTPUT"
+          echo "out_server=$OUT_SERVER" >> "$GITHUB_OUTPUT"
 
   upload:
     name: Upload artifacts
@@ -89,21 +106,20 @@ jobs:
     if: success()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      # React Router v7 outputs here by default:
-      - name: Upload client bundle
+      - name: Upload client bundle (if present)
+        if: ${{ needs.build.outputs.out_client != '' }}
         uses: actions/upload-artifact@v4
         with:
-          name: build-client
-          path: build/client
+          name: ${{ needs.build.outputs.out_client == 'dist' && 'dist' || 'build-client' }}
+          path: ${{ needs.build.outputs.out_client }}
           if-no-files-found: error
           retention-days: 7
 
-      - name: Upload server bundle
+      - name: Upload server bundle (if present)
+        if: ${{ needs.build.outputs.out_server != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: build-server
-          path: build/server
-          if-no-files-found: warn
+          path: ${{ needs.build.outputs.out_server }}
+          if-no-files-found: error
           retention-days: 7
