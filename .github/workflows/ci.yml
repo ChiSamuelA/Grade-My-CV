@@ -11,10 +11,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  install:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,14 +27,53 @@ jobs:
       - name: Install deps
         run: npm ci
 
-      # React Router v7: generate types for routes, then typecheck
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-
+
+  typecheck:
+    needs: install
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+
       - name: Typegen + Typecheck
         run: npm run typecheck
+
+  build:
+    needs: typecheck
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
 
       - name: Build (React Router)
         run: npm run build
 
-      # Upload build artifacts so you can grab them from the run page
+  upload:
+    needs: build
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
       - name: Upload client bundle
         uses: actions/upload-artifact@v4
         with:
