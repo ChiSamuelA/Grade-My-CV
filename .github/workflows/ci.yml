@@ -46,12 +46,9 @@ jobs:
       - run: npm run typecheck
 
   build:
-    name: Build
+    name: Build & Upload artifact
     needs: typecheck
     runs-on: ubuntu-latest
-    outputs:
-      out_client: ${{ steps.detect.outputs.out_client }}
-      out_server: ${{ steps.detect.outputs.out_server }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -67,59 +64,29 @@ jobs:
       - name: Build project
         run: npm run build
 
-      # 👇 Detect where the build actually went
+      # Detect the client build folder created by the build
       - name: Detect build output
         id: detect
         shell: bash
         run: |
-          echo "Listing workspace:"
-          ls -la
-          echo "Listing build tree (if any):"
-          [ -d build ] && ls -la build || true
-          [ -d dist ] && ls -la dist || true
-
           OUT_CLIENT=""
-          OUT_SERVER=""
-
           if [ -d "build/client" ]; then
             OUT_CLIENT="build/client"
           elif [ -d "dist" ]; then
             OUT_CLIENT="dist"
           elif [ -d "build" ]; then
-            # fallback: upload whole build dir
             OUT_CLIENT="build"
           fi
-
-          if [ -d "build/server" ]; then
-            OUT_SERVER="build/server"
+          echo "Detected client output: $OUT_CLIENT"
+          if [ -z "$OUT_CLIENT" ]; then
+            echo "No build output folder found"; exit 1
           fi
-
-          echo "Detected client out: $OUT_CLIENT"
-          echo "Detected server out: $OUT_SERVER"
-
           echo "out_client=$OUT_CLIENT" >> "$GITHUB_OUTPUT"
-          echo "out_server=$OUT_SERVER" >> "$GITHUB_OUTPUT"
 
-  upload:
-    name: Upload artifacts
-    needs: build
-    if: success()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Upload client bundle (if present)
-        if: ${{ needs.build.outputs.out_client != '' }}
+      - name: Upload web build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ needs.build.outputs.out_client == 'dist' && 'dist' || 'build-client' }}
-          path: ${{ needs.build.outputs.out_client }}
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Upload server bundle (if present)
-        if: ${{ needs.build.outputs.out_server != '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-server
-          path: ${{ needs.build.outputs.out_server }}
+          name: web-build
+          path: ${{ steps.detect.outputs.out_client }}
           if-no-files-found: error
           retention-days: 7
