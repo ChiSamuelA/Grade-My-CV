@@ -1,0 +1,16 @@
+{
+    "common": {
+      "uploadResume": "télécharger CV"
+    },
+    "navbar": {
+      "appName": "grade my cv"
+    },
+    "home": {
+      "heading": "suivez vos candidatures et voyez comment votre CV se classe",
+      "subheading": "Examinez vos soumissions et recevez des commentaires exploitables alimentés par l'IA."
+    },
+    "meta": {
+      "homeTitle": "Grade My CV",
+      "homeDescription": "Obtenez d'excellents commentaires pour l'emploi de vos rêves!"
+    }
+  }

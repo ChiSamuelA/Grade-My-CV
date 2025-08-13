@@ -1,0 +1,76 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="United Kingdom flag">
+  <defs>
+    <!-- Shared lighting -->
+    <radialGradient id="gloss" cx="0.3" cy="0.2" r="0.8">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.45"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.65"/>
+      <stop offset="0.5" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.35"/>
+    </linearGradient>
+
+    <!-- Match France’s tones -->
+    <linearGradient id="uk-blue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#001B5E"/>
+      <stop offset="0.5" stop-color="#002B7F"/>
+      <stop offset="1" stop-color="#00194F"/>
+    </linearGradient>
+    <linearGradient id="uk-white" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.6" stop-color="#F7F7F7"/>
+      <stop offset="1" stop-color="#ECECEC"/>
+    </linearGradient>
+    <linearGradient id="uk-red" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#B10E22"/>
+      <stop offset="0.5" stop-color="#CF142B"/>
+      <stop offset="1" stop-color="#990A1A"/>
+    </linearGradient>
+
+    <clipPath id="circleClip">
+      <circle cx="32" cy="32" r="30"/>
+    </clipPath>
+  </defs>
+
+  <rect width="64" height="64" fill="none"/>
+
+  <g clip-path="url(#circleClip)">
+    <!-- Base blue field -->
+    <rect x="2" y="2" width="60" height="60" fill="url(#uk-blue)"/>
+
+    <!-- White diagonals (St. Andrew's) -->
+    <g stroke="url(#uk-white)" stroke-width="12" stroke-linecap="butt">
+      <line x1="2"  y1="2"  x2="62" y2="62"/>
+      <line x1="62" y1="2"  x2="2"  y2="62"/>
+    </g>
+
+    <!-- Red diagonals (St. Patrick's) - centered for clarity at small sizes -->
+    <g stroke="url(#uk-red)" stroke-width="6" stroke-linecap="butt">
+      <line x1="2"  y1="2"  x2="62" y2="62"/>
+      <line x1="62" y1="2"  x2="2"  y2="62"/>
+    </g>
+
+    <!-- White cross (horizontal & vertical) -->
+    <g>
+      <rect x="2"  y="28" width="60" height="8" fill="url(#uk-white)"/>
+      <rect x="28" y="2"  width="8"  height="60" fill="url(#uk-white)"/>
+    </g>
+
+    <!-- Red cross centered -->
+    <g>
+      <rect x="2"  y="30" width="60" height="4" fill="url(#uk-red)"/>
+      <rect x="30" y="2"  width="4"  height="60" fill="url(#uk-red)"/>
+    </g>
+
+    <!-- Gloss highlight -->
+    <rect x="2" y="2" width="60" height="60" fill="url(#gloss)"/>
+
+    <!-- Subtle inner vignette -->
+    <circle cx="32" cy="32" r="30" fill="none" stroke="url(#rim)" stroke-width="2"/>
+  </g>
+
+  <!-- Clean circular edge -->
+  <circle cx="32" cy="32" r="30" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="0.5"/>
+</svg>

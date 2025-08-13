@@ -1,0 +1,16 @@
+{
+    "common": {
+      "uploadResume": "upload resume"
+    },
+    "navbar": {
+      "appName": "grade my cv"
+    },
+    "home": {
+      "heading": "keep track of your job applications and see how your resume scores",
+      "subheading": "Review your submissions and receive actionable feedback powered by AI."
+    },
+    "meta": {
+      "homeTitle": "Grade My CV",
+      "homeDescription": "Get Excellent Feedback For Your Dream Job!"
+    }
+  }

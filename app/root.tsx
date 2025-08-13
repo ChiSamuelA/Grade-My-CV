@@ -6,8 +6,10 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
+import { useEffect } from "react";
 
 import type { Route } from "./+types/root";
+import { useLanguageStore } from "~/i18n";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
@@ -23,9 +25,42 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
-export function Layout({ children }: { children: React.ReactNode }) {
+// Language Provider Component
+function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const { initializeLanguage } = useLanguageStore();
+
+  useEffect(() => {
+    initializeLanguage();
+  }, [initializeLanguage]);
+
+  return <>{children}</>;
+}
+
+// Dynamic Language Layout
+function DynamicLanguageLayout({ children }: { children: React.ReactNode }) {
+  const { currentLanguage, isInitialized } = useLanguageStore();
+
+  // Prevent render until language is initialized to avoid flicker
+  if (!isInitialized) {
+    return (
+      <html lang="en">
+        <head>
+          <meta charSet="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <Meta />
+          <Links />
+        </head>
+        <body>
+          <div className="min-h-screen bg-white" />
+          <ScrollRestoration />
+          <Scripts />
+        </body>
+      </html>
+    );
+  }
+
   return (
-    <html lang="en">
+    <html lang={currentLanguage}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -38,6 +73,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
+  );
+}
+
+export function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <LanguageProvider>
+      <DynamicLanguageLayout>
+        {children}
+      </DynamicLanguageLayout>
+    </LanguageProvider>
   );
 }
 
