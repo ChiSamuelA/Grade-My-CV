@@ -3,52 +3,107 @@ name: CI
 on:
   push:
     branches: [ master ]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   install:
+    name: Install deps
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Use Node.js from .nvmrc
+      - name: Use Node from .nvmrc
         uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
 
-      - name: Install dependencies
+      # Cache npm downloads (speeds up npm ci)
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+
+      - name: npm ci
         run: npm ci
 
   typecheck:
+    name: Typecheck
     needs: install
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js from .nvmrc
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-      - run: npm run typecheck
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+
+      # ✅ ensure the react-router CLI from @react-router/dev is installed in THIS job
+      - name: npm ci
+        run: npm ci
+
+      - name: react-router typegen + tsc
+        run: npm run typecheck
 
   build:
+    name: Build
     needs: typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js from .nvmrc
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-      - run: npm run build
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+
+      - name: npm ci
+        run: npm ci
+
+      - name: react-router build
+        run: npm run build
 
   upload:
+    name: Upload artifacts
     needs: build
+    if: success()
     runs-on: ubuntu-latest
-    if: success() # ✅ Only run if build passed
     steps:
       - uses: actions/checkout@v4
-      - name: Upload production-ready files
+
+      # React Router v7 outputs here by default:
+      - name: Upload client bundle
         uses: actions/upload-artifact@v4
         with:
-          name: dist
-          path: dist # ✅ Correct folder for Vite builds
+          name: build-client
+          path: build/client
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload server bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-server
+          path: build/server
+          if-no-files-found: warn
+          retention-days: 7
