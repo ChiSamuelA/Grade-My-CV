@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      # React Router v7: generate types for routes, then typecheck
+      - name: Typegen + Typecheck
+        run: npm run typecheck
+
+      - name: Build (React Router)
+        run: npm run build
+
+      # Upload build artifacts so you can grab them from the run page
+      - name: Upload client bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-client
+          path: build/client
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload server bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-server
+          path: build/server
+          if-no-files-found: warn
+          retention-days: 7
