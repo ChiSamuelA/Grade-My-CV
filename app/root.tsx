@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import type { Route } from "./+types/root";
 import { useLanguageStore } from "~/i18n";
 import "./app.css";
+import { usePuterStore } from "./lib/puter";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -39,6 +40,11 @@ function LanguageProvider({ children }: { children: React.ReactNode }) {
 // Dynamic Language Layout
 function DynamicLanguageLayout({ children }: { children: React.ReactNode }) {
   const { currentLanguage, isInitialized } = useLanguageStore();
+  const { init } = usePuterStore();
+
+  useEffect(() => {
+    init()
+  }, [init])
 
   // Prevent render until language is initialized to avoid flicker
   if (!isInitialized) {
@@ -51,6 +57,8 @@ function DynamicLanguageLayout({ children }: { children: React.ReactNode }) {
           <Links />
         </head>
         <body>
+          <script src="https://js.puter.com/v2/"></script>
+
           <div className="min-h-screen bg-white" />
           <ScrollRestoration />
           <Scripts />
